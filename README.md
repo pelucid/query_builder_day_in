@@ -15,4 +15,4 @@ When you have virtualenv installed, create a new Python environment and activate
 virtualenv interview_env
 source interview_env/bin/activate
 ```
-Next, install some requirements by running: `pip install -r requirements.txt`, where interview_requirements.txt is the path to the accompanying file. This may take a minute or two. When you're able to install the packages in requirements.txt, you're all done!
+Next, install some requirements by running: `pip install -r requirements.txt`, where requirements.txt is the path to the accompanying file. This may take a minute or two. When you're able to install the packages in requirements.txt, you're all done!
