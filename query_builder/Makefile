@@ -6,7 +6,7 @@ endif
 endif
 
 run: venv
-	python main.py
+	PYTHONPATH=${PWD}/../:${PYTHONPATH} python main.py
 
 deps: venv
 	pip install -Ur requirements.txt
