@@ -14,6 +14,65 @@ class CompanyQueryBuilder(APIHandler):
         super(CompanyQueryBuilder, self).__init__(*args, **kwargs)
         self.valid_args = settings.COMPANIES_FILTERS
 
+    @exception_handling
+    def get(self):
+        """Handle get requests to /company_query_builder"""
+        self.pagination = Pagination(limit=self.get_argument("limit", None),
+                                     offset=self.get_argument("offset", 0))
+        self.validate_args(self.valid_args)
+        self.parse_parameters()
+        self.parsed_params["size"] = self.pagination.page_size
+        self.parsed_params["from"] = self.pagination.page_offset
+        es_query = self.app.piston.company_search(self.parsed_params)
+
+        top_level_dict = {}
+
+        self.send(es_query, top_level_dict=top_level_dict)
+
+    def parse_parameters(self, org=None, model_config=None):
+        """Parse the URL parameters and build parsed_params dict."""
+
+        # e.g. cash=1000-10000 or total_assets=-5000
+        self.parse_range_argument("cash")
+        self.parse_range_argument("revenue")
+
+        # Args which may have multiple queries e.g. &cid=1&cid=2
+        self.parse_get_arguments("cid", "cids")
+        self.parse_get_arguments("sector_context", "sectors")
+
+        # Special cases requiring custom logic
+        self.parse_trading_activity()
+
+        self.parse_boolean_argument("exclude_tps", include_if_false=False)
+        self.parse_boolean_argument("ecommerce", include_if_false=False)
+        self.parse_boolean_argument("aggregate")
+
+    def parse_trading_activity(self):
+        """Parse trading activity parameters"""
+        url_arg = self.get_argument('trading_activity', None)
+        if url_arg:
+            self.parsed_params["trading_activity"] = dict()
+            self.parse_dates(url_arg, "trading_activity")
+
+    def parse_boolean_argument(self, arg, include_if_false=True):
+        """Update parsed params with boolean arg value."""
+        arg_val = self.parse_boolean(arg)
+        if arg_val or include_if_false:
+            self.parsed_params[arg] = arg_val
+
+    def parse_range_argument(self, arg):
+        """Update parsed params if arg in request"""
+        lower, upper = self.parse_range(arg)
+        if lower or upper:
+            self.add_to_parsed_params(arg, {"gte": lower, "lte": upper})
+
+    def parse_get_arguments(self, arg, key=None):
+        """Update parsed params if arg in request"""
+        key = key or arg
+        args = self.get_arguments(arg)
+        if args:
+            self.add_to_parsed_params(key, args)
+
     def parse_range(self, arg):
         """Parser for arguments that are numerical range types.
 
@@ -74,8 +133,8 @@ class CompanyQueryBuilder(APIHandler):
 
         if arg:
             try:
-                parameter = datetime.datetime.strptime(arg,
-                                                       '%Y%m%de').date().isoformat()
+                parameter = datetime.datetime.strptime(
+                    arg, '%Y%m%de').date().isoformat()
                 return parameter
             except Exception:
                 raise ParameterValueError(key=arg, value=arg)
@@ -92,69 +151,7 @@ class CompanyQueryBuilder(APIHandler):
             if dateto:
                 self.parsed_params[key]["lte"] = dateto
 
-    def parse_trading_activity(self):
-        """Parse trading activity parameters"""
-        url_arg = self.get_argument('trading_activity', None)
-        if url_arg:
-            self.parsed_params["trading_activity"] = dict()
-            self.parse_dates(url_arg, "trading_activity")
-
-    def parse_parameters(self, org=None, model_config=None):
-        """Parse the URL parameters and build parsed_params dict."""
-
-        # e.g. cash=1000-10000 or total_assets=-5000
-        self.parse_range_argument("cash")
-        self.parse_range_argument("revenue")
-
-        # Args which may have multiple queries e.g. &cid=1&cid=2
-        self.parse_get_arguments("cid", "cids")
-        self.parse_get_arguments("sector_context", "sectors")
-
-        # Special cases requiring custom logic
-        self.parse_trading_activity()
-
-        self.parse_boolean_argument("exclude_tps", include_if_false=False)
-        self.parse_boolean_argument("ecommerce", include_if_false=False)
-        self.parse_boolean_argument("aggregate")
-
-    def parse_boolean_argument(self, arg, include_if_false=True):
-        """Update parsed params with boolean arg value."""
-        arg_val = self.parse_boolean(arg)
-        if arg_val or include_if_false:
-            self.parsed_params[arg] = arg_val
-
-    def parse_range_argument(self, arg):
-        """Update parsed params if arg in request"""
-        lower, upper = self.parse_range(arg)
-        if lower or upper:
-            self.add_to_parsed_params(arg, {"gte": lower, "lte": upper})
-
-    def parse_get_arguments(self, arg, key=None):
-        """Update parsed params if arg in request"""
-        key = key or arg
-        args = self.get_arguments(arg)
-        if args:
-            self.add_to_parsed_params(key, args)
-
     def add_to_parsed_params(self, param_key, param_value):
         """Add params to parsed_params if arg exists"""
         self.parsed_params[param_key] = param_value
 
-
-    @exception_handling
-    def get(self):
-        """Handle get requests to /company_query_builder"""
-        self.pagination = Pagination(limit=self.get_argument("limit", None),
-                                     offset=self.get_argument("offset", 0))
-        self.validate_args(self.valid_args)
-        self.parse_parameters()
-        self.get_json()
-
-    def get_json(self):
-        self.parsed_params["size"] = self.pagination.page_size
-        self.parsed_params["from"] = self.pagination.page_offset
-        es_query = self.app.piston.company_search(self.parsed_params)
-
-        top_level_dict = {}
-
-        self.send(es_query, top_level_dict=top_level_dict)
