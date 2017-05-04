@@ -105,8 +105,7 @@ class Application(tornado.web.Application):
         self.access_log = logging.getLogger('query_builder.main.access')
         self.access_log.propagate = False
         self.access_log.setLevel(logging.INFO)
-        for log_path_dir in ['{0}/logs/'.format(api_directory),
-                             '/var/log/query_builder/logs/']:
+        for log_path_dir in ['{0}/logs/'.format(api_directory)]:
             log_path = log_path_dir + 'query_builder.main.access-{0}.log'.format(port)
             f_handler = logging.FileHandler(log_path)
             f_handler.setFormatter(formatter)
@@ -116,8 +115,7 @@ class Application(tornado.web.Application):
         self.error_log = logging.getLogger('query_builder.main.error')
         self.error_log.propagate = False
         self.error_log.setLevel(logging.WARNING)
-        for log_path_dir in ['{0}/logs/'.format(api_directory),
-                             '/var/log/query_builder/logs/']:
+        for log_path_dir in ['{0}/logs/'.format(api_directory)]:
             log_path = log_path_dir + 'query_builder.main.error.log'
             f_handler = logging.FileHandler(log_path)
             f_handler.setFormatter(formatter)
@@ -128,8 +126,7 @@ class Application(tornado.web.Application):
         self.log = logging.getLogger('query_builder.main.info')
         self.log.propagate = False
         self.log.setLevel(logging.INFO)
-        for log_path_dir in ['{0}/logs/'.format(api_directory),
-                             '/var/log/query_builder/logs/']:
+        for log_path_dir in ['{0}/logs/'.format(api_directory)]:
             log_path = log_path_dir + 'query_builder.main.info.log'
             f_handler = logging.FileHandler(log_path)
             f_handler.setFormatter(formatter)
