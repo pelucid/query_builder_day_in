@@ -46,16 +46,6 @@ def setup_logger(logger_name, path, level, propagate=False):
     f_handler.setFormatter(formatter)
     logger.addHandler(f_handler)
 
-    # Backup files
-    if not os.path.isdir("/var/log/query_builder"):
-        os.mkdir("/var/log/query_builder")
-    if not os.path.isdir("/var/log/query_builder/logs"):
-        os.mkdir("/var/log/query_builder/logs")
-    f_handler = logging.FileHandler(os.path.join("/var/log/query_builder", path))
-    formatter = logging.Formatter(log_format)
-    f_handler.setFormatter(formatter)
-    logger.addHandler(f_handler)
-
 
 def setup_loggers():
     """Setup loggers and handlers for third party libraries."""
