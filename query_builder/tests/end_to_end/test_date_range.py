@@ -43,14 +43,14 @@ def trade_activity_template(gte=None, lte=None):
 def test_date_range_both_ends():
     url = "/v1/company_query_builder?trading_activity=20150101-20160101"
     response = get_es_query(url)
-    assert response == trade_activity_template(1420070400, 1451606400)
+    assert response == trade_activity_template("2015-01-01", "2016-01-01")
 
 def test_date_range_bottom_end():
     url = "/v1/company_query_builder?trading_activity=20150101-"
     response = get_es_query(url)
-    assert response == trade_activity_template(1420070400, None)
+    assert response == trade_activity_template("2015-01-01", None)
 
 def test_date_range_upper_end():
     url = "/v1/company_query_builder?trading_activity=-20160101"
     response = get_es_query(url)
-    assert response == trade_activity_template(None, 1451606400)
+    assert response == trade_activity_template(None, "2016-01-01")
