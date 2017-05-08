@@ -1,4 +1,16 @@
+"""
+
+Usage:
+    main.py <url_path>
+
+Options:
+    <url_path> - URL path with query parameters to turn into query.
+                 e.g. /v1/company_query_builder?revenue=20150101-20160101
+                 
+"""
 import json
+
+import docopt
 
 from query_builder.app import handlers
 
@@ -17,5 +29,6 @@ def get_es_query(request_url):
 
 
 if __name__ == "__main__":
-    es_query = get_es_query("/v1/company_query_builder?revenue=20150101-20160101")
+    args = docopt.docopt(__doc__)
+    es_query = get_es_query(args['<url_path>'])
     print json.dumps(es_query, indent=4)
