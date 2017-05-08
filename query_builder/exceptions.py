@@ -22,7 +22,7 @@ class UrlError(ClientError):
 
 class ParameterKeyError(ClientError):
     def __init__(self, key):
-        self.msg = "Key Error: {}".format(key)
+        super(ParameterKeyError, self).__init__("Key Error: {}".format(key))
 
 
 class ParameterValueError(ClientError):

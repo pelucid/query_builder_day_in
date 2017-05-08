@@ -1,20 +1,23 @@
 import datetime
 import re
+import urlparse
 
-from query_builder.app.handlers.base import APIHandler, exception_handling
+from query_builder import exceptions
+from query_builder.app.elastic.piston import Piston
 from query_builder.app.handlers.pagination import Pagination
 from query_builder.config.app import settings
-from query_builder.exceptions import ParameterValueError
 
 
-class CompanyQueryBuilder(APIHandler):
+class CompanyQueryBuilder(object):
     """Company Query Builder main handler."""
 
-    def __init__(self, *args, **kwargs):
-        super(CompanyQueryBuilder, self).__init__(*args, **kwargs)
+    def __init__(self, url):
+        parsed_url = urlparse.urlparse(url)
+        self.query_params = urlparse.parse_qs(parsed_url.query)
         self.valid_args = settings.COMPANIES_FILTERS
+        self.piston = Piston()
+        self.parsed_params = dict()
 
-    @exception_handling
     def get(self):
         """Handle get requests to /company_query_builder"""
         self.pagination = Pagination(limit=self.get_argument("limit", None),
@@ -23,11 +26,28 @@ class CompanyQueryBuilder(APIHandler):
         self.parse_parameters()
         self.parsed_params["size"] = self.pagination.page_size
         self.parsed_params["from"] = self.pagination.page_offset
-        es_query = self.app.piston.company_search(self.parsed_params)
+        es_query = self.piston.company_search(self.parsed_params)
 
-        top_level_dict = {}
+        return es_query
 
-        self.send(es_query, top_level_dict=top_level_dict)
+    def get_argument(self, name, default=None):
+        return self.query_params.get(name, [default])[-1]
+
+    def get_arguments(self, name):
+        return self.query_params.get(name, [])
+
+    def validate_args(self, valid_arguments=None, required_args=None):
+        """Check argument parameters are valid and present raise exception if not"""
+        request_set = set(self.query_params.keys())
+        if valid_arguments:
+            invalid = request_set - set(valid_arguments)
+            if invalid:
+                raise exceptions.ParameterKeyError(key=", ".join(invalid))
+
+        if required_args:
+            missing = set(required_args) - request_set
+            if missing:
+                raise exceptions.ParameterKeyError(key=", ".join(missing))
 
     def parse_parameters(self, org=None, model_config=None):
         """Parse the URL parameters and build parsed_params dict."""
@@ -86,7 +106,7 @@ class CompanyQueryBuilder(APIHandler):
             exp = "^([0-9]*)[-]([0-9]*)$"
             m = re.search(exp, arg_param)
             if not m:
-                raise ParameterValueError(key=arg, value=arg_param)
+                raise exceptions.ParameterValueError(key=arg, value=arg_param)
 
             lbound, ubound = None, None
             # Parse lower bound
@@ -94,17 +114,17 @@ class CompanyQueryBuilder(APIHandler):
                 try:
                     lbound = int(m.group(1))
                 except ValueError:
-                    raise ParameterValueError(key=arg, value=arg_param)
+                    raise exceptions.ParameterValueError(key=arg, value=arg_param)
 
             # Parse upper bound
             if m.group(2):
                 try:
                     ubound = int(m.group(2))
                 except ValueError:
-                    raise ParameterValueError(key=arg, value=arg_param)
+                    raise exceptions.ParameterValueError(key=arg, value=arg_param)
 
             if lbound != None and ubound != None and lbound > ubound:
-                raise ParameterValueError(key=arg, value=arg_param)
+                raise exceptions.ParameterValueError(key=arg, value=arg_param)
 
             return lbound, ubound
         else:
@@ -126,7 +146,7 @@ class CompanyQueryBuilder(APIHandler):
         elif arg_check_bool:
             return {"true": True, "false": False}[arg_param.lower()]
         else:
-            raise ParameterValueError(key=arg, value=arg_param)
+            raise exceptions.ParameterValueError(key=arg, value=arg_param)
 
     def parse_date(self, arg):
         """ Parse a date argument """
@@ -137,7 +157,7 @@ class CompanyQueryBuilder(APIHandler):
                     arg, '%Y%m%de').date().isoformat()
                 return parameter
             except Exception:
-                raise ParameterValueError(key=arg, value=arg)
+                raise exceptions.ParameterValueError(key=arg, value=arg)
 
     def parse_dates(self, url_arg, key):
         """Parse the dates arguments from URL params."""

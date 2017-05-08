@@ -4,11 +4,9 @@
 import datetime
 import json
 import logging
-import string
 import os
 
 
-from query_builder import exceptions
 from query_builder.config import settings
 from query_builder import __file__ as api_path
 from query_builder.app.elastic import companies_search
@@ -18,7 +16,7 @@ api_version = settings.app_settings["version"]
 
 
 class Piston(object):
-    """ES querying layer."""
+    """Logic for converting parameter dictionaries into Elasticsearch Query"""
 
     def __init__(self, logger=None):
 
