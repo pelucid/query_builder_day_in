@@ -156,8 +156,9 @@ class CompanyQueryBuilder(object):
                 parameter = datetime.datetime.strptime(
                     arg, '%Y%m%de').date().isoformat()
                 return parameter
-            except Exception:
-                raise exceptions.ParameterValueError(key=arg, value=arg)
+            except Exception as e:
+                raise exceptions.ParameterValueError(key=arg, value=arg,
+                                                     message=e.message)
 
     def parse_dates(self, url_arg, key):
         """Parse the dates arguments from URL params."""
