@@ -31,4 +31,4 @@ def get_es_query(request_url):
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     es_query = get_es_query(args['<url_path>'])
-    print json.dumps(es_query, indent=4)
+    print json.dumps(es_query, indent=2)
