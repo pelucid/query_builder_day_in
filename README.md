@@ -16,3 +16,54 @@ virtualenv interview_env
 source interview_env/bin/activate
 ```
 Next, install some requirements by running: `pip install -r requirements.txt`, where requirements.txt is the path to the accompanying file. This may take a minute or two. When you're able to install the packages in requirements.txt, you're all done!
+
+### Checking you're done
+
+First, make sure your PYTHONPATH environment variable is set correctly. This can be done by running the following command:
+```bash
+export PYTHONPATH=/path/to/this/repo:$PYTHONPATH
+```
+When you have the dependencies installed, try the following command:
+
+```bash
+python main.py "/v1/company_query_builder?revenue=20150101-20160101"
+```
+You should see the following output:
+```json
+{
+  "query": {
+    "filtered": {
+      "filter": {
+        "and": [
+          {
+            "term": {
+              "status": 1
+            }
+          },
+          {
+            "nested": {
+              "filter": {
+                "bool": {
+                  "must": [
+                    {
+                      "range": {
+                        "financial_filters.revenue": {
+                          "gte": 20150101,
+                          "lte": 20160101
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "path": "financial_filters"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "from": 0,
+  "size": 50
+}
+```
