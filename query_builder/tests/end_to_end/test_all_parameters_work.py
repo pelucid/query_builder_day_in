@@ -1,7 +1,6 @@
 import pytest
-from tornado.httpclient import HTTPError
 
-from query_builder.tests.pytest_utils import fetch_json, build_complete_url
+from query_builder.main import get_es_query
 
 
 @pytest.mark.parametrize('url', [
@@ -14,10 +13,5 @@ from query_builder.tests.pytest_utils import fetch_json, build_complete_url
     '/v1/company_query_builder?exclude_tps=true',
     '/v1/company_query_builder?trading_activity=20150101-20160101',
 ])
-@pytest.mark.gen_test
-def test_all(http_client, base_url, url):
-    _url = build_complete_url(base_url, url)
-    try:
-        response = yield fetch_json(http_client, _url)
-    except HTTPError:
-        raise Exception("Call to {} failed".format(url))
+def test_all(url):
+    get_es_query(url)
