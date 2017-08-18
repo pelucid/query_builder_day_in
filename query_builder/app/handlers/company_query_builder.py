@@ -103,7 +103,7 @@ class CompanyQueryBuilder(object):
 
         arg_param = self.get_argument(arg, None)
         if arg_param:
-            exp = "^([0-9]*)[-]([0-9]*)$"
+            exp = re.compile("^(\-?[0-9]+)?\-(\-?[0-9]+)?$")
             m = re.search(exp, arg_param)
             if not m:
                 raise exceptions.ParameterValueError(key=arg, value=arg_param)
@@ -154,7 +154,7 @@ class CompanyQueryBuilder(object):
         if arg:
             try:
                 parameter = datetime.datetime.strptime(
-                    arg, '%Y%m%de').date().isoformat()
+                    arg, '%Y%m%d').date().isoformat()
                 return parameter
             except Exception as e:
                 raise exceptions.ParameterValueError(key=arg, value=arg,
