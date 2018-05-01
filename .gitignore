@@ -69,3 +69,8 @@ user/configs
 
 /venv
 .cache
+
+# Pytest cache folder
+.pytest_cache/*
+query_builder/tests/.pytest_cache/*
+
