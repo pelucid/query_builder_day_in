@@ -25,7 +25,7 @@ def get_es_query(request_url):
         Dictionary - elasticsearch query
     """
     handler = handlers.CompanyQueryBuilder(request_url)
-    return handler.get()
+    return handler.build()
 
 
 if __name__ == "__main__":

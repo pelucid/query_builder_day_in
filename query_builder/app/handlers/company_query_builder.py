@@ -4,6 +4,7 @@ import urlparse
 
 from query_builder import exceptions
 from query_builder.app.elastic.piston import Piston
+from query_builder.app.factories.FilterUtilFactory import FilterUtilFactory
 from query_builder.app.handlers.pagination import Pagination
 from query_builder.config.app import settings
 
@@ -16,17 +17,42 @@ class CompanyQueryBuilder(object):
         self.query_params = urlparse.parse_qs(parsed_url.query)
         self.valid_args = settings.COMPANIES_FILTERS
         self.piston = Piston()
-        self.parsed_params = dict()
 
-    def get(self):
+
+    def build(self):
         """Handle get requests to /company_query_builder"""
         self.pagination = Pagination(limit=self.get_argument("limit", None),
                                      offset=self.get_argument("offset", 0))
-        self.validate_args(self.valid_args)
-        self.parse_parameters()
-        self.parsed_params["size"] = self.pagination.page_size
-        self.parsed_params["from"] = self.pagination.page_offset
-        es_query = self.piston.company_search(self.parsed_params)
+        # self.validate_args(self.valid_args)
+
+        # self.parse_parameters()
+
+        factory = FilterUtilFactory()
+        parsed_params = dict()
+
+        print(self.query_params)
+
+        for name, value in self.query_params:
+            filtered_filter = filter(lambda x: x["argument"] == name, settings.COMPANIES_FILTERS)
+            # Get additional_settings from settings
+            filter_type = filtered_filter["type"]
+            util = factory.get_util(filter_type)
+
+            # NOTE: Didn't have time to get around to it, but in order to handle parameters that are specific to a
+            # particular param type, we could include those values in a dictionary in the app settings.
+            # These would then be passed into the parse_arg function, where it would either be ignored because it's not
+            # needed, or it would be used because the implementation knows it is necessary.
+
+            # An example of this scenario is the Boolean arg type, which needs a include_if_false flag
+
+            parsed_arg = util.parse_arg(name, value, additional_settings)
+
+            parsed_params.update(parsed_arg)
+
+        parsed_params["size"] = self.pagination.page_size
+        parsed_params["from"] = self.pagination.page_offset
+
+        es_query = self.piston.company_search(parsed_params)
 
         return es_query
 
@@ -52,9 +78,6 @@ class CompanyQueryBuilder(object):
     def parse_parameters(self, org=None, model_config=None):
         """Parse the URL parameters and build parsed_params dict."""
 
-        # e.g. cash=1000-10000 or total_assets=-5000
-        self.parse_range_argument("cash")
-        self.parse_range_argument("revenue")
 
         # Args which may have multiple queries e.g. &cid=1&cid=2
         self.parse_get_arguments("cid", "cids")
@@ -80,55 +103,12 @@ class CompanyQueryBuilder(object):
         if arg_val or include_if_false:
             self.parsed_params[arg] = arg_val
 
-    def parse_range_argument(self, arg):
-        """Update parsed params if arg in request"""
-        lower, upper = self.parse_range(arg)
-        if lower or upper:
-            self.add_to_parsed_params(arg, {"gte": lower, "lte": upper})
-
     def parse_get_arguments(self, arg, key=None):
         """Update parsed params if arg in request"""
         key = key or arg
         args = self.get_arguments(arg)
         if args:
             self.add_to_parsed_params(key, args)
-
-    def parse_range(self, arg):
-        """Parser for arguments that are numerical range types.
-
-        Takes the argument to check as an input (e.g. revenue).
-        Expect an argument of the format: n-N
-        Returns lower and upper bounds. Negative values are permitted.
-        Returns None if parsing failed."""
-
-        arg_param = self.get_argument(arg, None)
-        if arg_param:
-            exp = re.compile("^(\-?[0-9]+)?\-(\-?[0-9]+)?$")
-            m = re.search(exp, arg_param)
-            if not m:
-                raise exceptions.ParameterValueError(key=arg, value=arg_param)
-
-            lbound, ubound = None, None
-            # Parse lower bound
-            if m.group(1):
-                try:
-                    lbound = int(m.group(1))
-                except ValueError:
-                    raise exceptions.ParameterValueError(key=arg, value=arg_param)
-
-            # Parse upper bound
-            if m.group(2):
-                try:
-                    ubound = int(m.group(2))
-                except ValueError:
-                    raise exceptions.ParameterValueError(key=arg, value=arg_param)
-
-            if lbound != None and ubound != None and lbound > ubound:
-                raise exceptions.ParameterValueError(key=arg, value=arg_param)
-
-            return lbound, ubound
-        else:
-            return None, None
 
     def parse_boolean(self, arg):
         """Parse boolean argument types

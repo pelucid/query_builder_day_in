@@ -5,16 +5,18 @@ class AppSettings(object):
         self.SECTOR_ES_FIELD = 'sector.id'
 
         self.COMPANIES_FILTERS = [
-            "revenue",
-            "sector_context",
-            "ecommerce",
-            "limit",
-            "offset",
-            "cid",
-            "exclude_tps",
-            "cash",
-            "aggregate",
-            "trading_activity",
+            { "type": "number-range", "argument": "revenue" },
+            { "type": "number-range", "argument": "cash" },
+            { "type": "boolean", "argument": "cash", "additional_values": { "include_if_false": False } },
+            # "sector_context",
+            # "ecommerce",
+            # "limit",
+            # "offset",
+            # "cid",
+            # "exclude_tps",
+            # "cash",
+            # "aggregate",
+            # "trading_activity",
         ]
 
         self.app_settings["version"] = "2.19"
